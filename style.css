@@ -1,0 +1,55 @@
+
+.centerPara
+{
+  text-align: center;
+}
+
+#title
+{
+  text-align: center;
+  margin-right: 0;
+}
+
+#info
+{
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  padding-bottom: 25px;
+}
+
+#contents
+{
+  height: 100%;
+  width: 90%;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+}
+
+#input
+{
+  width: 20%;
+}
+
+#map 
+{
+  height: 100%;
+  width: 75%;
+  display: inline-block;
+}
+
+#foot
+{
+  margin-top: 25px;
+  padding-bottom: 25px;
+}
+
+/* Optional: Makes the sample page fill the window. */
+html,
+body 
+{
+  height: 100%;
+  font-family: Arial, Helvetica, sans-serif;
+  background-color: rgb(226, 226, 226);
+}
