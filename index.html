@@ -16,10 +16,24 @@
         <div id="info">
             <hr>
             <p> 
-                <b>Info</b><br>
+                <b>Info</b><br><br>
                 This tool allows you to estimate the landing location given some parameters. This will allow you to plan your flights and determine safety factors.
                 It works by integrating position from the lat long position and apogee. Wind is applied in form of drag.
                 <br>
+            </p>
+            <p>
+                <b>How to use</b><br><br>
+                You just have to enter the expected flight parameters. Then select a location in the map or input the lat long. Then hit Go!, the white arrow indicates
+                the wind direction, the smaller white circle is the estimated landing location and the small black circle the launching point.
+                The red circle gives you an idea of an "exclusion" zone around your launch location to include changing winds or other factors.
+            </p>
+            <p> 
+                <b>Changelog</b>
+                <ul>
+                    <li>
+                        7/1/2021 - Initial release
+                    </li>
+                </ul>
             </p>
             <hr>
         </div>
@@ -29,16 +43,20 @@
                 <form>                
                     <!-- General -->
                     <label for="apogee"> Apogee </label><br>
-                    <input type="number" step="0.01" max id="apogee" name="apogee" value="375">   
+                    <input type="number" step="0.01" max id="apogee" name="apogee" value="300">   
                     <label class="distUnit"></label> <br>
     
                     <label for="terminalVel"> Terminal velocity </label><br>
-                    <input type="number" step="0.01" id="terminalVel" name="terminalVel" value="8.11">
+                    <input type="number" step="0.01" id="terminalVel" name="terminalVel" value="8.0">
                     <label class="speedUnit"></label> <br>
     
                     <label for="rocketMass"> Rocket Mass </label><br>
-                    <input type="number" step="0.01" id="rocketMass" name="rocketMass" value="0.0309">
+                    <input type="number" step="0.01" id="rocketMass" name="rocketMass" value="0.1">
                     <label class="massUnit"></label> <br>
+
+                    <label for="rocketLateralArea"> Rocket Lateral Area </label><br>
+                    <input type="number" step="0.01" id="rocketLateralArea" name="rocketLateralArea" value="0.5">
+                    <label class="areaUnit"></label> <br>
     
                     <br>
                     
@@ -55,7 +73,7 @@
                     <label class="speedUnit"></label> <br>
     
                     <label for="windDirection"> Wind Direction </label><br>
-                    <input type="number" step="0.01" id="windDirection" name="windDirection"> <br>
+                    <input type="number" step="0.01" id="windDirection" name="windDirection" min="0.0" max="360.0" value="40.0"> <br>
                     <br>
     
                     <!-- Units -->
@@ -78,8 +96,13 @@
 
         <div id="foot">
             <p class="centerPara">
-                By nachocpol@gmail.com <br>
-                <b>Celtic Aeronautics</b>
+                <a href="https://github.com/Celtic-Aeronautics/Landing-Range-Indicator/blob/main/LICENSE.md" target="_blank">License</a> |
+                <a href="https://github.com/Celtic-Aeronautics/Landing-Range-Indicator" target="_blank">Source Code</a> |
+                <a href="https://github.com/Celtic-Aeronautics/Landing-Range-Indicator/issues" target="_blank">Report issues</a> 
+            </p>
+            <p class="centerPara">
+                    By nachocpol@gmail.com <br>
+                    <b>Celtic Aeronautics</b>
             </p>
         </div>
 

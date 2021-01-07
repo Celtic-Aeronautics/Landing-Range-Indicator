@@ -6,6 +6,7 @@ const rangeColor = "#FF0000";
 
 // Some generic constants:
 const ftToMeter = 0.3048;
+const sqFtToSqMeter = 0.092903;
 const ozToKg = 0.0283495;
 const airDensity = 1.225; // kg/m^3
 
@@ -14,10 +15,11 @@ var isMetric = true;
 var apogee = 0.0;
 var terminalVel = 0.0;
 var map;
-var curLocation = {lat : 42.0, lng : -8.5 };
+var curLocation = {lat : 53.3245, lng : -2.1926 };
 var windSpeed = 0.0;
 var windDirection = 0.0;
 var rocketMass = 0.0;
+var rocketLateralArea = 0.0;
 
 var launchRangeCircle;
 var launchLocationMarker;
@@ -68,6 +70,11 @@ function getRocketMass()
     return isMetric ? rocketMass : (rocketMass * ozToKg);
 }
 
+function getRocketLateralArea()
+{
+    return isMetric ? rocketLateralArea : (rocketLateralArea * sqFtToSqMeter);
+}
+
 var firstTime = true;
 function refreshUnits()
 {
@@ -92,6 +99,13 @@ function refreshUnits()
         ele.innerText = isMetric ? "kg" : "oz";
     }
 
+    // Area labels:
+    var areaLabels = document.getElementsByClassName("areaUnit"); 
+    for(const ele of areaLabels)
+    {
+        ele.innerText = isMetric ? "m^2" : "ft^2";
+    }
+
     // Gather settings and update the values:
     if(firstTime)
     {
@@ -104,12 +118,14 @@ function refreshUnits()
         // Figure out conversion direction, this expects that 'isMetric' was changed before calling this:
         var distConv = isMetric ? ftToMeter : ( 1 / ftToMeter);
         var weightConv = isMetric ? ozToKg : ( 1 / ozToKg);
+        var areaConv = isMetric ? sqFtToSqMeter : (1 / sqFtToSqMeter);
 
         // Now convert the values:
         document.getElementById("apogee").value =  (apogee * distConv).toFixed(2);
         document.getElementById("terminalVel").value = (terminalVel * distConv).toFixed(2);
         document.getElementById("windSpeed").value = (windSpeed * distConv).toFixed(2);
         document.getElementById("rocketMass").value = (rocketMass * weightConv).toFixed(2);
+        document.getElementById("rocketLateralArea").value = (rocketLateralArea * areaConv).toFixed(2);
     }
 }
 
@@ -125,10 +141,6 @@ function updateMapRange(radius, landingPos)
     launchRangeCircle.setVisible(true);
     launchRangeCircle.setRadius(radius);
     launchRangeCircle.setCenter(curLocation);
-
-    // Launch position:
-    launchLocationMarker.setVisible(true);
-    launchLocationMarker.setCenter(curLocation);
 
     // Lading pos, this is 0,0 based (in meters)
     var curPosLocation = latLongToPos(curLocation);
@@ -154,6 +166,7 @@ function gatherSettings()
     windDirection = +document.getElementById("windDirection").value;
     windSpeed = +document.getElementById("windSpeed").value;
     rocketMass = +document.getElementById("rocketMass").value;
+    rocketLateralArea = +document.getElementById("rocketLateralArea").value;
 }
 
 function onRefresh()
@@ -164,32 +177,55 @@ function onRefresh()
 
     // Integrate:
     var timeToGround = getApogee() / getTerminalVel();
-    var deltaTime = 0.01;
+    var deltaTime = 0.05;
     var pos = [0.0, 0.0];
     var vel = [0.0, 0.0];
     var wind = math.multiply(getWindDirection(), getWindSpeed()); // Direction and magnitude.
+    var maxVel = 0.0;
     for(var time = 0.0; time < timeToGround; time += deltaTime)
     {
         var relativeVel = math.subtract(wind, vel);
-        var curDrag = computeDragForce(relativeVel, airDensity, 0.75, 0.5);
+        var curDrag = computeDragForce(relativeVel, airDensity, 0.75, getRocketLateralArea());
         var curAccel = math.divide(curDrag, getRocketMass());
 
         vel = math.add(vel, math.multiply(curAccel, deltaTime));
         pos = math.add(pos, math.multiply(vel, deltaTime));
+
+        // Clamp large values...
+        var velXSign = Math.sign(vel[0]);
+        if(Math.abs(vel[0]) > 65000.0)
+        {
+            vel[0] = 65000.0 * velXSign;
+        }
+        var velYSign = Math.sign(vel[1]);
+        if(Math.abs(vel[1]) > 65000.0)
+        {
+            vel[1] = 65000.0 * velYSign;
+        }
+
+        maxVel = Math.max(maxVel, vectorMagnitude(relativeVel));
     }
     
+    console.log(maxVel);
+
     // Update indicators:
     var radius = vectorMagnitude(pos); // In meters.
     updateMapRange(radius, pos);
     updateWeatherVane(radius);
+
+    // Focus new location:
+    map.panTo(curLocation);
 }
 
 function updateLoc()
 {
-    document.getElementById("locationLat").value = curLocation.lat.toFixed(2);
-    document.getElementById("locationLong").value = curLocation.lng.toFixed(2);
-    map.setZoom(15.0);
+    document.getElementById("locationLat").value = curLocation.lat.toFixed(4);
+    document.getElementById("locationLong").value = curLocation.lng.toFixed(4);
     map.panTo(curLocation);
+
+    // Launch position:
+    launchLocationMarker.setVisible(true);
+    launchLocationMarker.setCenter(curLocation);
 }
 
 // Returns approx position in km
@@ -261,6 +297,7 @@ function initMap()
         curLocation.lng = mapEvent.latLng.lng();
         updateLoc();
     });
+    map.setZoom(17.0);
 
     // Create the range indicator:
     launchRangeCircle = new google.maps.Circle({
@@ -273,6 +310,7 @@ function initMap()
         center: curLocation,
         radius: 300.0,
         zIndex : 2,
+        clickable : false,
     });
     launchRangeCircle.setVisible(false);
 
@@ -282,10 +320,11 @@ function initMap()
         strokeOpacity: 1.0,
         strokeWeight: 2,
         fillColor: "#000000",
-        fillOpacity: 1.0,
+        fillOpacity: 0.5,
         map,
         center: curLocation,
-        radius: 1.0,
+        radius: 6.0,
+        zIndex : 2,
     });
     launchLocationMarker.setVisible(false);
 
@@ -293,12 +332,12 @@ function initMap()
     landingLocationMarker = new google.maps.Circle({
         strokeColor: "#FFFFFF",
         strokeOpacity: 1.0,
-        strokeWeight: 2,
+        strokeWeight: 1.5,
         fillColor: "#FFFFFF",
-        fillOpacity: 1.0,
+        fillOpacity: 0.5,
         map,
         center: curLocation,
-        radius: 5.0,
+        radius: 6.0,
         zIndex : 2,
     });
     landingLocationMarker.setVisible(false);
@@ -306,4 +345,6 @@ function initMap()
     updateLoc();
 
     refreshUnits(isMetric);
+
+    onRefresh();
 }
